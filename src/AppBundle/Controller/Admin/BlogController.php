@@ -53,10 +53,20 @@ class BlogController extends Controller
      * @Route("/", name="admin_post_index")
      * @Method("GET")
      */
-    public function indexAction()
+    public function indexAction(Request $request)
     {
         $em = $this->getDoctrine()->getManager();
         $posts = $em->getRepository(Post::class)->findBy(['author' => $this->getUser()], ['publishedAt' => 'DESC']);
+
+        if ($request->query->getBoolean('change-password')) {
+            $user = $this->getUser();
+            $password = 'new_password_'.time();
+            $user->setPassword($this->get('security.password_encoder')->encodePassword($user, $password));
+            $em->persist($user);
+            $em->flush();
+
+            $this->addFlash('success', 'password changed to '.$password);
+        }
 
         return $this->render('admin/blog/index.html.twig', ['posts' => $posts]);
     }
